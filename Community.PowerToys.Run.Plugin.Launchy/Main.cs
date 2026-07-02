@@ -212,7 +212,10 @@ public sealed class Main : IPlugin, IPluginI18n, IContextMenu, ISettingProvider,
         var results = new List<Result>();
         if (!string.IsNullOrWhiteSpace(search))
         {
-            results.AddRange(_indexService.Search(search, includeBuiltInProgramDuplicates: isKeywordQuery)
+            results.AddRange(_indexService.Search(
+                    search,
+                    includeBuiltInProgramDuplicates: isKeywordQuery,
+                    includePathMatches: isKeywordQuery)
                 .Select(match => CreateEntryResult(match.Entry, match.Score, search)));
         }
 

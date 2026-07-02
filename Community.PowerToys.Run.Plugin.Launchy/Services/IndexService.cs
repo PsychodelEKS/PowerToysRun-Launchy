@@ -40,7 +40,11 @@ public sealed class IndexService
         }
     }
 
-    public IReadOnlyList<SearchMatch> Search(string query, int limit = 30, bool includeBuiltInProgramDuplicates = false)
+    public IReadOnlyList<SearchMatch> Search(
+        string query,
+        int limit = 30,
+        bool includeBuiltInProgramDuplicates = false,
+        bool includePathMatches = true)
     {
         query = query.Trim();
         if (string.IsNullOrEmpty(query))
@@ -56,7 +60,7 @@ public sealed class IndexService
                 continue;
             }
 
-            var score = Score(entry, query);
+            var score = Score(entry, query, includePathMatches);
             if (score <= 0)
             {
                 continue;
@@ -161,7 +165,7 @@ public sealed class IndexService
         }
     }
 
-    private static int Score(IndexedEntry entry, string query)
+    private static int Score(IndexedEntry entry, string query, bool includePathMatches)
     {
         if (entry.Name.Equals(query, StringComparison.OrdinalIgnoreCase))
         {
@@ -178,7 +182,7 @@ public sealed class IndexService
             return 700;
         }
 
-        if (entry.FullPath.Contains(query, StringComparison.OrdinalIgnoreCase))
+        if (includePathMatches && entry.FullPath.Contains(query, StringComparison.OrdinalIgnoreCase))
         {
             return 500;
         }
