@@ -2,7 +2,7 @@
 
 Launchy-style folder index plugin for PowerToys Run.
 
-Current version: `0.1.5`.
+Current version: `0.1.6`.
 
 ## Features
 
@@ -13,6 +13,7 @@ Current version: `0.1.5`.
 - Use `ln rescan` to rebuild the index from PowerToys Run.
 - Optionally expose indexed entries in global PowerToys Run results.
 - Show file and folder icons through the Windows shell icon provider when PowerToys can resolve them.
+- Skip files that are already covered by the built-in PowerToys Run Program/Application plugin sources.
 - Open, reveal, copy, or rescan from the result context menu.
 
 ## Screenshots

@@ -74,6 +74,7 @@ public sealed class IndexService
         var now = DateTimeOffset.UtcNow;
         var entries = new List<IndexedEntry>();
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var builtInProgramPaths = BuiltInProgramPathIndex.CreateDefault();
 
         foreach (var rule in settings.FolderRules.Where(rule => rule.Enabled))
         {
@@ -140,6 +141,11 @@ public sealed class IndexService
         {
             var fullPath = Path.GetFullPath(path);
             if (!seen.Add(fullPath))
+            {
+                return;
+            }
+
+            if (!isDirectory && builtInProgramPaths.Contains(fullPath))
             {
                 return;
             }
