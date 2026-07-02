@@ -8,6 +8,7 @@ public sealed class IndexedEntry
 
     public required bool IsDirectory { get; init; }
 
+    public bool IsBuiltInProgramDuplicate { get; init; }
+
     public required DateTimeOffset IndexedAt { get; init; }
 }
-

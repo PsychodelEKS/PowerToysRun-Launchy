@@ -40,7 +40,7 @@ public sealed class IndexService
         }
     }
 
-    public IReadOnlyList<SearchMatch> Search(string query, int limit = 30)
+    public IReadOnlyList<SearchMatch> Search(string query, int limit = 30, bool includeBuiltInProgramDuplicates = false)
     {
         query = query.Trim();
         if (string.IsNullOrEmpty(query))
@@ -51,6 +51,11 @@ public sealed class IndexService
         var matches = new List<SearchMatch>();
         foreach (var entry in _entries)
         {
+            if (!includeBuiltInProgramDuplicates && entry.IsBuiltInProgramDuplicate)
+            {
+                continue;
+            }
+
             var score = Score(entry, query);
             if (score <= 0)
             {
@@ -145,16 +150,12 @@ public sealed class IndexService
                 return;
             }
 
-            if (!isDirectory && builtInProgramPaths.Contains(fullPath))
-            {
-                return;
-            }
-
             entries.Add(new IndexedEntry
             {
                 Name = isDirectory ? new DirectoryInfo(fullPath).Name : Path.GetFileName(fullPath),
                 FullPath = fullPath,
                 IsDirectory = isDirectory,
+                IsBuiltInProgramDuplicate = !isDirectory && builtInProgramPaths.Contains(fullPath),
                 IndexedAt = now,
             });
         }
