@@ -12,6 +12,8 @@ public sealed class LaunchyFolderRule
 
     public bool IncludeDirectories { get; set; }
 
+    public bool MatchDirectoryNames { get; set; }
+
     public LaunchyFolderRule Clone()
     {
         return new LaunchyFolderRule
@@ -21,7 +23,7 @@ public sealed class LaunchyFolderRule
             Extensions = Extensions,
             MaxDepth = MaxDepth,
             IncludeDirectories = IncludeDirectories,
+            MatchDirectoryNames = MatchDirectoryNames,
         };
     }
 }
-

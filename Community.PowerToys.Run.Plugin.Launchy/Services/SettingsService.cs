@@ -132,11 +132,11 @@ public sealed class SettingsService
                     ["PluginOptionType"] = 4,
                     ["Key"] = folderRulesOptionKey,
                     ["DisplayLabel"] = "Folder rules",
-                    ["DisplayDescription"] = "Same list used by ln settings. One rule per line: path | extensions | maxDepth | includeDirectories | enabled",
+                    ["DisplayDescription"] = "Same list used by ln settings. One rule per line: path | extensions | maxDepth | includeDirectories | enabled | matchDirectoryNames",
                     ["Value"] = false,
                     ["ComboBoxValue"] = 0,
                     ["NumberValue"] = 0,
-                    ["PlaceholderText"] = @"C:\Tools | .exe;.lnk | 10 | false | true",
+                    ["PlaceholderText"] = @"C:\Tools | .exe;.lnk | 10 | false | true | false",
                 };
                 additionalOptions.Add(folderRulesOption);
             }

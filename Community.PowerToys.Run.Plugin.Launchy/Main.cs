@@ -48,10 +48,10 @@ public sealed class Main : IPlugin, IPluginI18n, IContextMenu, ISettingProvider,
                     PluginOptionType = PluginAdditionalOption.AdditionalOptionType.MultilineTextbox,
                     Key = FolderRulesOptionKey,
                     DisplayLabel = "Folder rules",
-                    DisplayDescription = "Same list used by ln settings. One rule per line: path | extensions | maxDepth | includeDirectories | enabled",
+                    DisplayDescription = "Same list used by ln settings. One rule per line: path | extensions | maxDepth | includeDirectories | enabled | matchDirectoryNames",
                     TextValue = string.Join(Environment.NewLine, serializedFolderRules),
                     TextValueAsMultilineList = serializedFolderRules,
-                    PlaceholderText = $@"C:\Tools | {DefaultExtensions} | {DefaultMaxDepth} | false | true",
+                    PlaceholderText = $@"C:\Tools | {DefaultExtensions} | {DefaultMaxDepth} | false | true | false",
                 },
             ];
         }
@@ -214,8 +214,7 @@ public sealed class Main : IPlugin, IPluginI18n, IContextMenu, ISettingProvider,
         {
             results.AddRange(_indexService.Search(
                     search,
-                    includeBuiltInProgramDuplicates: isKeywordQuery,
-                    includePathMatches: isKeywordQuery)
+                    includeBuiltInProgramDuplicates: isKeywordQuery)
                 .Select(match => CreateEntryResult(match.Entry, match.Score, search)));
         }
 
@@ -398,7 +397,8 @@ public sealed class Main : IPlugin, IPluginI18n, IContextMenu, ISettingProvider,
                 string.IsNullOrWhiteSpace(rule.Extensions) ? DefaultExtensions : rule.Extensions,
                 Math.Max(0, rule.MaxDepth).ToString(),
                 rule.IncludeDirectories.ToString().ToLowerInvariant(),
-                rule.Enabled.ToString().ToLowerInvariant()))
+                rule.Enabled.ToString().ToLowerInvariant(),
+                rule.MatchDirectoryNames.ToString().ToLowerInvariant()))
             .ToList();
     }
 
@@ -443,6 +443,7 @@ public sealed class Main : IPlugin, IPluginI18n, IContextMenu, ISettingProvider,
                 MaxDepth = Math.Max(0, ParseInt(GetPart(parts, 2, DefaultMaxDepth.ToString()), DefaultMaxDepth)),
                 IncludeDirectories = ParseBool(GetPart(parts, 3, bool.FalseString), defaultValue: false),
                 Enabled = ParseBool(GetPart(parts, 4, bool.TrueString), defaultValue: true),
+                MatchDirectoryNames = ParseBool(GetPart(parts, 5, bool.FalseString), defaultValue: false),
             };
         }
     }

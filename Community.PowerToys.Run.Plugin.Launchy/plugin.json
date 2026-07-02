@@ -5,7 +5,7 @@
   "IsGlobal": true,
   "Name": "Launchy",
   "Author": "PsychodelEKS",
-  "Version": "0.1.8",
+  "Version": "0.1.9",
   "Language": "csharp",
   "Website": "https://github.com/PsychodelEKS/PowerToysRun-Launchy",
   "ExecuteFileName": "Community.PowerToys.Run.Plugin.Launchy.dll",

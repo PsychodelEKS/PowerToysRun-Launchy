@@ -43,8 +43,7 @@ public sealed class IndexService
     public IReadOnlyList<SearchMatch> Search(
         string query,
         int limit = 30,
-        bool includeBuiltInProgramDuplicates = false,
-        bool includePathMatches = true)
+        bool includeBuiltInProgramDuplicates = false)
     {
         query = query.Trim();
         if (string.IsNullOrEmpty(query))
@@ -60,7 +59,7 @@ public sealed class IndexService
                 continue;
             }
 
-            var score = Score(entry, query, includePathMatches);
+            var score = Score(entry, query);
             if (score <= 0)
             {
                 continue;
@@ -109,7 +108,7 @@ public sealed class IndexService
 
                 if (rule.IncludeDirectories && currentDepth > 0)
                 {
-                    AddEntry(directoryPath, isDirectory: true);
+                    AddEntry(directoryPath, isDirectory: true, rule.MatchDirectoryNames);
                 }
 
                 try
@@ -122,7 +121,7 @@ public sealed class IndexService
                             continue;
                         }
 
-                        AddEntry(filePath, isDirectory: false);
+                        AddEntry(filePath, isDirectory: false, rule.MatchDirectoryNames);
                     }
 
                     if (currentDepth >= maxDepth)
@@ -146,7 +145,7 @@ public sealed class IndexService
 
         return entries;
 
-        void AddEntry(string path, bool isDirectory)
+        void AddEntry(string path, bool isDirectory, bool matchDirectoryNames)
         {
             var fullPath = Path.GetFullPath(path);
             if (!seen.Add(fullPath))
@@ -160,12 +159,13 @@ public sealed class IndexService
                 FullPath = fullPath,
                 IsDirectory = isDirectory,
                 IsBuiltInProgramDuplicate = !isDirectory && builtInProgramPaths.Contains(fullPath),
+                MatchDirectoryNames = matchDirectoryNames,
                 IndexedAt = now,
             });
         }
     }
 
-    private static int Score(IndexedEntry entry, string query, bool includePathMatches)
+    private static int Score(IndexedEntry entry, string query)
     {
         if (entry.Name.Equals(query, StringComparison.OrdinalIgnoreCase))
         {
@@ -182,12 +182,31 @@ public sealed class IndexService
             return 700;
         }
 
-        if (includePathMatches && entry.FullPath.Contains(query, StringComparison.OrdinalIgnoreCase))
+        if (entry.MatchDirectoryNames && DirectoryNameMatches(entry.FullPath, query))
         {
             return 500;
         }
 
         return 0;
+    }
+
+    private static bool DirectoryNameMatches(string fullPath, string query)
+    {
+        var directoryPath = Path.GetDirectoryName(fullPath);
+        if (string.IsNullOrWhiteSpace(directoryPath))
+        {
+            return false;
+        }
+
+        foreach (var directoryName in directoryPath.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar))
+        {
+            if (directoryName.Contains(query, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static HashSet<string> ParseExtensions(string extensions)

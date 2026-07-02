@@ -10,5 +10,7 @@ public sealed class IndexedEntry
 
     public bool IsBuiltInProgramDuplicate { get; init; }
 
+    public bool MatchDirectoryNames { get; init; }
+
     public required DateTimeOffset IndexedAt { get; init; }
 }

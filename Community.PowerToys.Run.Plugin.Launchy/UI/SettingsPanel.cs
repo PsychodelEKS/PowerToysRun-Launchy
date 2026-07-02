@@ -48,7 +48,7 @@ public sealed class SettingsPanel : Wpf.UserControl
 
         var description = new Wpf.TextBlock
         {
-            Text = "This editor updates the same Folder rules text shown in PowerToys Settings. Format: path | extensions | maxDepth | includeDirectories | enabled",
+            Text = "This editor updates the same Folder rules text shown in PowerToys Settings. Format: path | extensions | maxDepth | includeDirectories | enabled | matchDirectoryNames",
             TextWrapping = TextWrapping.Wrap,
             Margin = new Thickness(0, 0, 0, 8),
         };
@@ -144,6 +144,13 @@ public sealed class SettingsPanel : Wpf.UserControl
             Width = Wpf.DataGridLength.SizeToHeader,
         });
 
+        grid.Columns.Add(new Wpf.DataGridCheckBoxColumn
+        {
+            Header = "Folder name matches",
+            Binding = new System.Windows.Data.Binding(nameof(LaunchyFolderRule.MatchDirectoryNames)),
+            Width = Wpf.DataGridLength.SizeToHeader,
+        });
+
         return grid;
     }
 
@@ -165,6 +172,7 @@ public sealed class SettingsPanel : Wpf.UserControl
             Extensions = ".exe;.lnk",
             MaxDepth = 10,
             IncludeDirectories = false,
+            MatchDirectoryNames = false,
             Enabled = true,
         });
     }
