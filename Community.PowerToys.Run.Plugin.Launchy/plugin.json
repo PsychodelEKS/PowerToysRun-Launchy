@@ -1,0 +1,16 @@
+{
+  "ID": "f5a247f6c82a4b63a33ef0b88adff02a",
+  "ActionKeyword": "ln",
+  "Disabled": false,
+  "IsGlobal": true,
+  "Name": "Launchy",
+  "Author": "PsychodelEKS",
+  "Version": "0.1.0",
+  "Language": "csharp",
+  "Website": "https://github.com/PsychodelEKS/PowerToysRun-Launchy",
+  "ExecuteFileName": "Community.PowerToys.Run.Plugin.Launchy.dll",
+  "IcoPathDark": "Images\\Launchy.dark.png",
+  "IcoPathLight": "Images\\Launchy.light.png",
+  "DynamicLoading": true
+}
+
