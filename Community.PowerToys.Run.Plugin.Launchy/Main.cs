@@ -16,6 +16,8 @@ public sealed class Main : IPlugin, IPluginI18n, IContextMenu, ISettingProvider,
     private const string ActionKeyword = "ln";
     private const string RescanCommand = "rescan";
     private const string SettingsCommand = "settings";
+    private const int ExactCommandScore = 1100;
+    private const int SuggestedCommandScore = 100;
     private const string FolderRulesOptionKey = "folderRules";
     private const string DefaultExtensions = ".exe;.lnk";
     private const int DefaultMaxDepth = 10;
@@ -202,28 +204,25 @@ public sealed class Main : IPlugin, IPluginI18n, IContextMenu, ISettingProvider,
         var isKeywordQuery = IsKeywordQuery(query);
         var search = query.Search?.Trim() ?? string.Empty;
 
-        if (isKeywordQuery && IsRescanQuery(search))
-        {
-            return [CreateRescanResult(search)];
-        }
-
-        if (isKeywordQuery && IsSettingsQuery(search))
-        {
-            return [CreateSettingsResult(search)];
-        }
-
         if (!isKeywordQuery && !_settings.EnableGlobalResults)
         {
             return [];
         }
 
-        if (string.IsNullOrWhiteSpace(search))
+        var results = new List<Result>();
+        if (!string.IsNullOrWhiteSpace(search))
         {
-            return [];
+            results.AddRange(_indexService.Search(search)
+                .Select(match => CreateEntryResult(match.Entry, match.Score, search)));
         }
 
-        return _indexService.Search(search)
-            .Select(match => CreateEntryResult(match.Entry, match.Score, search))
+        if (isKeywordQuery)
+        {
+            results.AddRange(CreateCommandResults(search));
+        }
+
+        return results
+            .OrderByDescending(result => result.Score)
             .ToList();
     }
 
@@ -234,14 +233,27 @@ public sealed class Main : IPlugin, IPluginI18n, IContextMenu, ISettingProvider,
             Title = entry.Name,
             SubTitle = entry.FullPath,
             QueryTextDisplay = query,
-            IcoPath = _iconPath,
+            IcoPath = GetEntryIconPath(entry),
             Score = score,
             ContextData = entry,
             Action = _ => OpenEntry(entry),
         };
     }
 
-    private Result CreateRescanResult(string query)
+    private IEnumerable<Result> CreateCommandResults(string query)
+    {
+        if (ShouldShowCommand(query, RescanCommand))
+        {
+            yield return CreateRescanResult(query, GetCommandScore(query, RescanCommand));
+        }
+
+        if (ShouldShowCommand(query, SettingsCommand))
+        {
+            yield return CreateSettingsResult(query, GetCommandScore(query, SettingsCommand));
+        }
+    }
+
+    private Result CreateRescanResult(string query, int score)
     {
         var subtitle = _indexService?.IsRescanRunning == true
             ? "Index rebuild is already running."
@@ -253,7 +265,7 @@ public sealed class Main : IPlugin, IPluginI18n, IContextMenu, ISettingProvider,
             SubTitle = subtitle,
             QueryTextDisplay = query,
             IcoPath = _iconPath,
-            Score = 1000,
+            Score = score,
             Action = context =>
             {
                 _ = RescanInBackgroundAsync(showNotification: true);
@@ -262,7 +274,7 @@ public sealed class Main : IPlugin, IPluginI18n, IContextMenu, ISettingProvider,
         };
     }
 
-    private Result CreateSettingsResult(string query)
+    private Result CreateSettingsResult(string query, int score)
     {
         return new Result
         {
@@ -270,13 +282,23 @@ public sealed class Main : IPlugin, IPluginI18n, IContextMenu, ISettingProvider,
             SubTitle = "Edit folder rules with a table and folder picker.",
             QueryTextDisplay = query,
             IcoPath = _iconPath,
-            Score = 1000,
+            Score = score,
             Action = _ =>
             {
                 OpenSettingsWindow();
                 return true;
             },
         };
+    }
+
+    private string GetEntryIconPath(IndexedEntry entry)
+    {
+        return EntryExists(entry) ? entry.FullPath : _iconPath;
+    }
+
+    private static bool EntryExists(IndexedEntry entry)
+    {
+        return entry.IsDirectory ? Directory.Exists(entry.FullPath) : File.Exists(entry.FullPath);
     }
 
     private async Task<int?> RescanInBackgroundAsync(bool showNotification)
@@ -519,14 +541,23 @@ public sealed class Main : IPlugin, IPluginI18n, IContextMenu, ISettingProvider,
             || rawQuery.StartsWith($"{ActionKeyword} ", StringComparison.OrdinalIgnoreCase);
     }
 
-    private static bool IsRescanQuery(string search)
+    private static bool ShouldShowCommand(string search, string command)
     {
-        return search.Equals(RescanCommand, StringComparison.OrdinalIgnoreCase);
+        if (string.IsNullOrWhiteSpace(search))
+        {
+            return true;
+        }
+
+        return command.StartsWith(search, StringComparison.OrdinalIgnoreCase)
+            || search.StartsWith(command, StringComparison.OrdinalIgnoreCase)
+            || !search.Contains(' ', StringComparison.Ordinal);
     }
 
-    private static bool IsSettingsQuery(string search)
+    private static int GetCommandScore(string search, string command)
     {
-        return search.Equals(SettingsCommand, StringComparison.OrdinalIgnoreCase);
+        return search.Equals(command, StringComparison.OrdinalIgnoreCase)
+            ? ExactCommandScore
+            : SuggestedCommandScore;
     }
 
     private void OnThemeChanged(Theme oldTheme, Theme newTheme)
