@@ -7,6 +7,7 @@ Launchy-style folder index plugin for PowerToys Run.
 - Index files from folders you choose.
 - Configure extensions, traversal depth, and whether folders should be included per indexed folder.
 - Use `ln <query>` to search indexed entries.
+- Use `ln settings` to edit folder rules with a table and folder picker.
 - Use `ln rescan` to rebuild the index from PowerToys Run.
 - Optionally expose indexed entries in global PowerToys Run results.
 
@@ -40,7 +41,9 @@ $env:LOCALAPPDATA\Microsoft\PowerToys\PowerToys Run\Plugins\Launchy\plugin.json
 
 Open PowerToys Settings, go to PowerToys Run plugins, then open `Launchy`.
 
-Use `Folder rules` to add indexed folders. Add one rule per line:
+Use `Folder rules` to see and edit indexed folders. You can also run `ln settings` in PowerToys Run to edit the same list with a table and folder picker.
+
+The text field uses one rule per line:
 
 ```text
 path | extensions | maxDepth | includeDirectories | enabled

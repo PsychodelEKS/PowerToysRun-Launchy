@@ -46,6 +46,15 @@ public sealed class SettingsPanel : Wpf.UserControl
         Wpf.DockPanel.SetDock(_enableGlobalResults, Wpf.Dock.Top);
         root.Children.Add(_enableGlobalResults);
 
+        var description = new Wpf.TextBlock
+        {
+            Text = "This editor updates the same Folder rules text shown in PowerToys Settings. Format: path | extensions | maxDepth | includeDirectories | enabled",
+            TextWrapping = TextWrapping.Wrap,
+            Margin = new Thickness(0, 0, 0, 8),
+        };
+        Wpf.DockPanel.SetDock(description, Wpf.Dock.Top);
+        root.Children.Add(description);
+
         var buttons = new Wpf.StackPanel
         {
             Orientation = Wpf.Orientation.Horizontal,

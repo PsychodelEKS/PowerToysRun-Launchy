@@ -15,6 +15,7 @@ public sealed class Main : IPlugin, IPluginI18n, IContextMenu, ISettingProvider,
 {
     private const string ActionKeyword = "ln";
     private const string RescanCommand = "rescan";
+    private const string SettingsCommand = "settings";
     private const string FolderRulesOptionKey = "folderRules";
     private const string DefaultExtensions = ".exe;.lnk";
     private const int DefaultMaxDepth = 10;
@@ -24,6 +25,7 @@ public sealed class Main : IPlugin, IPluginI18n, IContextMenu, ISettingProvider,
     private IndexService? _indexService;
     private LaunchySettings _settings = LaunchySettings.CreateDefault();
     private string _iconPath = "Images\\Launchy.light.png";
+    private Window? _settingsWindow;
     private bool _disposed;
 
     public string Name => "Launchy";
@@ -44,7 +46,7 @@ public sealed class Main : IPlugin, IPluginI18n, IContextMenu, ISettingProvider,
                     PluginOptionType = PluginAdditionalOption.AdditionalOptionType.MultilineTextbox,
                     Key = FolderRulesOptionKey,
                     DisplayLabel = "Folder rules",
-                    DisplayDescription = "One rule per line: path | extensions | maxDepth | includeDirectories | enabled",
+                    DisplayDescription = "Same list used by ln settings. One rule per line: path | extensions | maxDepth | includeDirectories | enabled",
                     TextValue = string.Join(Environment.NewLine, serializedFolderRules),
                     TextValueAsMultilineList = serializedFolderRules,
                     PlaceholderText = $@"C:\Tools | {DefaultExtensions} | {DefaultMaxDepth} | false | true",
@@ -136,7 +138,7 @@ public sealed class Main : IPlugin, IPluginI18n, IContextMenu, ISettingProvider,
     {
         return new SettingsPanel(
             _settings.Clone(),
-            SaveSettings,
+            SaveSettingsFromGui,
             () => RescanInBackgroundAsync(showNotification: true));
     }
 
@@ -205,6 +207,11 @@ public sealed class Main : IPlugin, IPluginI18n, IContextMenu, ISettingProvider,
             return [CreateRescanResult(search)];
         }
 
+        if (isKeywordQuery && IsSettingsQuery(search))
+        {
+            return [CreateSettingsResult(search)];
+        }
+
         if (!isKeywordQuery && !_settings.EnableGlobalResults)
         {
             return [];
@@ -255,6 +262,23 @@ public sealed class Main : IPlugin, IPluginI18n, IContextMenu, ISettingProvider,
         };
     }
 
+    private Result CreateSettingsResult(string query)
+    {
+        return new Result
+        {
+            Title = "Open Launchy settings",
+            SubTitle = "Edit folder rules with a table and folder picker.",
+            QueryTextDisplay = query,
+            IcoPath = _iconPath,
+            Score = 1000,
+            Action = _ =>
+            {
+                OpenSettingsWindow();
+                return true;
+            },
+        };
+    }
+
     private async Task<int?> RescanInBackgroundAsync(bool showNotification)
     {
         if (_indexService is null)
@@ -296,6 +320,50 @@ public sealed class Main : IPlugin, IPluginI18n, IContextMenu, ISettingProvider,
         _settingsService?.SaveSettings(_settings);
     }
 
+    private void SaveSettingsFromGui(LaunchySettings settings)
+    {
+        SaveSettings(settings);
+        _settingsService?.SavePowerToysPluginOptions(
+            PluginID,
+            FolderRulesOptionKey,
+            GetFolderRulesText(_settings.FolderRules),
+            _settings.EnableGlobalResults);
+    }
+
+    private void OpenSettingsWindow()
+    {
+        if (_context is null)
+        {
+            return;
+        }
+
+        System.Windows.Application.Current.Dispatcher.Invoke(() =>
+        {
+            if (_settingsWindow is not null)
+            {
+                _settingsWindow.Activate();
+                return;
+            }
+
+            _settingsWindow = new Window
+            {
+                Title = "Launchy settings",
+                Width = 900,
+                Height = 440,
+                MinWidth = 720,
+                MinHeight = 320,
+                WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                Content = new SettingsPanel(
+                    _settings.Clone(),
+                    SaveSettingsFromGui,
+                    () => RescanInBackgroundAsync(showNotification: true)),
+            };
+            _settingsWindow.Closed += (_, _) => _settingsWindow = null;
+            _settingsWindow.Show();
+            _settingsWindow.Activate();
+        });
+    }
+
     private static List<string> SerializeFolderRules(IEnumerable<LaunchyFolderRule> rules)
     {
         return rules
@@ -307,6 +375,11 @@ public sealed class Main : IPlugin, IPluginI18n, IContextMenu, ISettingProvider,
                 rule.IncludeDirectories.ToString().ToLowerInvariant(),
                 rule.Enabled.ToString().ToLowerInvariant()))
             .ToList();
+    }
+
+    private static string GetFolderRulesText(IEnumerable<LaunchyFolderRule> rules)
+    {
+        return string.Join(Environment.NewLine, SerializeFolderRules(rules));
     }
 
     private static IEnumerable<LaunchyFolderRule> ParseFolderRules(PluginAdditionalOption option)
@@ -451,6 +524,11 @@ public sealed class Main : IPlugin, IPluginI18n, IContextMenu, ISettingProvider,
         return search.Equals(RescanCommand, StringComparison.OrdinalIgnoreCase);
     }
 
+    private static bool IsSettingsQuery(string search)
+    {
+        return search.Equals(SettingsCommand, StringComparison.OrdinalIgnoreCase);
+    }
+
     private void OnThemeChanged(Theme oldTheme, Theme newTheme)
     {
         UpdateIconPath(newTheme);
@@ -474,6 +552,9 @@ public sealed class Main : IPlugin, IPluginI18n, IContextMenu, ISettingProvider,
         {
             _context.API.ThemeChanged -= OnThemeChanged;
         }
+
+        _settingsWindow?.Close();
+        _settingsWindow = null;
 
         _disposed = true;
     }
