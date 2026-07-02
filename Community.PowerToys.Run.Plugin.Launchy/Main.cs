@@ -13,7 +13,7 @@ namespace Community.PowerToys.Run.Plugin.Launchy;
 
 public sealed class Main : IPlugin, IPluginI18n, IContextMenu, ISettingProvider, IReloadable, IDisposable, IDelayedExecutionPlugin
 {
-    private const string ActionKeyword = "ln";
+    private const string DefaultActionKeyword = "ln";
     private const string RescanCommand = "rescan";
     private const string SettingsCommand = "settings";
     private const int ExactCommandScore = 1100;
@@ -531,14 +531,15 @@ public sealed class Main : IPlugin, IPluginI18n, IContextMenu, ISettingProvider,
 
     private static bool IsKeywordQuery(Query query)
     {
-        if (string.Equals(query.ActionKeyword, ActionKeyword, StringComparison.OrdinalIgnoreCase))
+        if (!string.IsNullOrWhiteSpace(query.ActionKeyword) &&
+            !string.Equals(query.ActionKeyword, "*", StringComparison.Ordinal))
         {
             return true;
         }
 
         var rawQuery = query.RawQuery ?? string.Empty;
-        return rawQuery.Equals(ActionKeyword, StringComparison.OrdinalIgnoreCase)
-            || rawQuery.StartsWith($"{ActionKeyword} ", StringComparison.OrdinalIgnoreCase);
+        return rawQuery.Equals(DefaultActionKeyword, StringComparison.OrdinalIgnoreCase)
+            || rawQuery.StartsWith($"{DefaultActionKeyword} ", StringComparison.OrdinalIgnoreCase);
     }
 
     private static bool ShouldShowCommand(string search, string command)
