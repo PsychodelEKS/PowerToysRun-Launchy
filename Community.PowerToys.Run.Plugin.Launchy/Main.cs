@@ -32,18 +32,26 @@ public sealed class Main : IPlugin, IPluginI18n, IContextMenu, ISettingProvider,
 
     public static string PluginID => "f5a247f6c82a4b63a33ef0b88adff02a";
 
-    public IEnumerable<PluginAdditionalOption> AdditionalOptions =>
-    [
-        new()
+    public IEnumerable<PluginAdditionalOption> AdditionalOptions
+    {
+        get
         {
-            PluginOptionType = PluginAdditionalOption.AdditionalOptionType.MultilineTextbox,
-            Key = FolderRulesOptionKey,
-            DisplayLabel = "Folder rules",
-            DisplayDescription = "One rule per line: path | extensions | maxDepth | includeDirectories | enabled",
-            TextValueAsMultilineList = SerializeFolderRules(_settings.FolderRules),
-            PlaceholderText = $@"C:\Tools | {DefaultExtensions} | {DefaultMaxDepth} | false | true",
-        },
-    ];
+            var serializedFolderRules = SerializeFolderRules(_settings.FolderRules);
+            return
+            [
+                new()
+                {
+                    PluginOptionType = PluginAdditionalOption.AdditionalOptionType.MultilineTextbox,
+                    Key = FolderRulesOptionKey,
+                    DisplayLabel = "Folder rules",
+                    DisplayDescription = "One rule per line: path | extensions | maxDepth | includeDirectories | enabled",
+                    TextValue = string.Join(Environment.NewLine, serializedFolderRules),
+                    TextValueAsMultilineList = serializedFolderRules,
+                    PlaceholderText = $@"C:\Tools | {DefaultExtensions} | {DefaultMaxDepth} | false | true",
+                },
+            ];
+        }
+    }
 
     public void Init(PluginInitContext context)
     {
