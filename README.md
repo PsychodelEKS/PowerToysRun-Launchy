@@ -36,6 +36,25 @@ $env:LOCALAPPDATA\Microsoft\PowerToys\PowerToys Run\Plugins\Launchy\plugin.json
 
 5. Start PowerToys again.
 
+## Settings
+
+Open PowerToys Settings, go to PowerToys Run plugins, then open `Launchy`.
+
+Use `Folder rules` to add indexed folders. Add one rule per line:
+
+```text
+path | extensions | maxDepth | includeDirectories | enabled
+```
+
+Example:
+
+```text
+C:\Tools | .exe;.lnk | 10 | false | true
+D:\PortableApps | .exe;.bat;.cmd | 2 | true | true
+```
+
+`extensions`, `maxDepth`, `includeDirectories`, and `enabled` are optional. Defaults are `.exe;.lnk`, `10`, `false`, and `true`.
+
 ## Build
 
 ```powershell
@@ -49,8 +68,8 @@ This plugin was bootstrapped from the [PowerToysRun Plugin Template](https://git
 Create and push a version tag:
 
 ```powershell
-git tag v0.1.0
-git push origin v0.1.0
+git tag vX.Y.Z
+git push origin vX.Y.Z
 ```
 
 GitHub Actions will publish `x64` and `arm64` zip assets compatible with `ptr`.

@@ -15,6 +15,9 @@ public sealed class Main : IPlugin, IPluginI18n, IContextMenu, ISettingProvider,
 {
     private const string ActionKeyword = "ln";
     private const string RescanCommand = "rescan";
+    private const string FolderRulesOptionKey = "folderRules";
+    private const string DefaultExtensions = ".exe;.lnk";
+    private const int DefaultMaxDepth = 10;
 
     private PluginInitContext? _context;
     private SettingsService? _settingsService;
@@ -29,7 +32,18 @@ public sealed class Main : IPlugin, IPluginI18n, IContextMenu, ISettingProvider,
 
     public static string PluginID => "f5a247f6c82a4b63a33ef0b88adff02a";
 
-    public IEnumerable<PluginAdditionalOption> AdditionalOptions => [];
+    public IEnumerable<PluginAdditionalOption> AdditionalOptions =>
+    [
+        new()
+        {
+            PluginOptionType = PluginAdditionalOption.AdditionalOptionType.MultilineTextbox,
+            Key = FolderRulesOptionKey,
+            DisplayLabel = "Folder rules",
+            DisplayDescription = "One rule per line: path | extensions | maxDepth | includeDirectories | enabled",
+            TextValueAsMultilineList = SerializeFolderRules(_settings.FolderRules),
+            PlaceholderText = $@"C:\Tools | {DefaultExtensions} | {DefaultMaxDepth} | false | true",
+        },
+    ];
 
     public void Init(PluginInitContext context)
     {
@@ -120,6 +134,23 @@ public sealed class Main : IPlugin, IPluginI18n, IContextMenu, ISettingProvider,
 
     public void UpdateSettings(PowerLauncherPluginSettings settings)
     {
+        if (_settingsService is null)
+        {
+            return;
+        }
+
+        var updatedSettings = _settings.Clone();
+        updatedSettings.EnableGlobalResults = settings.IsGlobal;
+
+        var folderRulesOption = settings.AdditionalOptions?
+            .FirstOrDefault(option => string.Equals(option.Key, FolderRulesOptionKey, StringComparison.OrdinalIgnoreCase));
+        if (folderRulesOption is not null)
+        {
+            updatedSettings.FolderRules = ParseFolderRules(folderRulesOption).ToList();
+        }
+
+        SaveSettings(updatedSettings);
+        _ = RescanInBackgroundAsync(showNotification: false);
     }
 
     public void ReloadData()
@@ -255,6 +286,92 @@ public sealed class Main : IPlugin, IPluginI18n, IContextMenu, ISettingProvider,
     {
         _settings = settings.Clone();
         _settingsService?.SaveSettings(_settings);
+    }
+
+    private static List<string> SerializeFolderRules(IEnumerable<LaunchyFolderRule> rules)
+    {
+        return rules
+            .Select(rule => string.Join(
+                " | ",
+                rule.Path,
+                string.IsNullOrWhiteSpace(rule.Extensions) ? DefaultExtensions : rule.Extensions,
+                Math.Max(0, rule.MaxDepth).ToString(),
+                rule.IncludeDirectories.ToString().ToLowerInvariant(),
+                rule.Enabled.ToString().ToLowerInvariant()))
+            .ToList();
+    }
+
+    private static IEnumerable<LaunchyFolderRule> ParseFolderRules(PluginAdditionalOption option)
+    {
+        var lines = option.TextValueAsMultilineList;
+        if ((lines is null || lines.Count == 0) && !string.IsNullOrWhiteSpace(option.TextValue))
+        {
+            lines = option.TextValue
+                .Split(["\r\n", "\n"], StringSplitOptions.None)
+                .ToList();
+        }
+
+        if (lines is null)
+        {
+            yield break;
+        }
+
+        foreach (var rawLine in lines)
+        {
+            var line = rawLine.Trim();
+            if (string.IsNullOrWhiteSpace(line) || line.StartsWith("#", StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            var parts = line.Split('|').Select(part => TrimQuotes(part.Trim())).ToArray();
+            if (parts.Length == 0 || string.IsNullOrWhiteSpace(parts[0]))
+            {
+                continue;
+            }
+
+            yield return new LaunchyFolderRule
+            {
+                Path = parts[0],
+                Extensions = GetPart(parts, 1, DefaultExtensions),
+                MaxDepth = Math.Max(0, ParseInt(GetPart(parts, 2, DefaultMaxDepth.ToString()), DefaultMaxDepth)),
+                IncludeDirectories = ParseBool(GetPart(parts, 3, bool.FalseString), defaultValue: false),
+                Enabled = ParseBool(GetPart(parts, 4, bool.TrueString), defaultValue: true),
+            };
+        }
+    }
+
+    private static string GetPart(IReadOnlyList<string> parts, int index, string defaultValue)
+    {
+        return index < parts.Count && !string.IsNullOrWhiteSpace(parts[index])
+            ? parts[index]
+            : defaultValue;
+    }
+
+    private static int ParseInt(string value, int defaultValue)
+    {
+        return int.TryParse(value, out var result) ? result : defaultValue;
+    }
+
+    private static bool ParseBool(string value, bool defaultValue)
+    {
+        return value.Trim().ToLowerInvariant() switch
+        {
+            "true" or "1" or "yes" or "y" or "on" => true,
+            "false" or "0" or "no" or "n" or "off" => false,
+            _ => defaultValue,
+        };
+    }
+
+    private static string TrimQuotes(string value)
+    {
+        if (value.Length >= 2 &&
+            ((value[0] == '"' && value[^1] == '"') || (value[0] == '\'' && value[^1] == '\'')))
+        {
+            return value[1..^1];
+        }
+
+        return value;
     }
 
     private void ShowNotification(string title, string message)

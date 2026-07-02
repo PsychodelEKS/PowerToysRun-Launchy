@@ -5,7 +5,7 @@
   "IsGlobal": true,
   "Name": "Launchy",
   "Author": "PsychodelEKS",
-  "Version": "0.1.0",
+  "Version": "0.1.1",
   "Language": "csharp",
   "Website": "https://github.com/PsychodelEKS/PowerToysRun-Launchy",
   "ExecuteFileName": "Community.PowerToys.Run.Plugin.Launchy.dll",
@@ -13,4 +13,3 @@
   "IcoPathLight": "Images\\Launchy.light.png",
   "DynamicLoading": true
 }
-
