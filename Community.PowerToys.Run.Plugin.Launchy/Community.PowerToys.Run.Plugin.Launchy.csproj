@@ -7,7 +7,7 @@
     <Nullable>enable</Nullable>
     <AssemblyName>Community.PowerToys.Run.Plugin.Launchy</AssemblyName>
     <RootNamespace>Community.PowerToys.Run.Plugin.Launchy</RootNamespace>
-    <Version>0.1.9</Version>
+    <Version>0.1.10</Version>
     <Platforms>x64;ARM64</Platforms>
     <EnableDynamicLoading>true</EnableDynamicLoading>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>

@@ -215,7 +215,7 @@ public sealed class Main : IPlugin, IPluginI18n, IContextMenu, ISettingProvider,
             results.AddRange(_indexService.Search(
                     search,
                     includeBuiltInProgramDuplicates: isKeywordQuery)
-                .Select(match => CreateEntryResult(match.Entry, match.Score, search)));
+                .Select(match => CreateEntryResult(match, search)));
         }
 
         if (isKeywordQuery)
@@ -228,15 +228,17 @@ public sealed class Main : IPlugin, IPluginI18n, IContextMenu, ISettingProvider,
             .ToList();
     }
 
-    private Result CreateEntryResult(IndexedEntry entry, int score, string query)
+    private Result CreateEntryResult(SearchMatch match, string query)
     {
+        var entry = match.Entry;
         return new Result
         {
             Title = entry.Name,
             SubTitle = entry.FullPath,
             QueryTextDisplay = query,
             IcoPath = GetEntryIconPath(entry),
-            Score = score,
+            Score = match.Score,
+            TitleHighlightData = match.TitleHighlightData,
             ContextData = entry,
             Action = _ => OpenEntry(entry),
         };

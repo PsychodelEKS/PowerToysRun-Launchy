@@ -2,13 +2,14 @@
 
 Launchy-style folder index plugin for PowerToys Run.
 
-Current version: `0.1.9`.
+Current version: `0.1.10`.
 
 ## Features
 
 - Index files from folders you choose.
 - Configure extensions, traversal depth, whether folders should be included, and whether parent folder names should match per indexed folder.
 - Use `ln <query>` to search indexed entries.
+- Use the same PowerToys Run fuzzy matcher as built-in plugins.
 - Use `ln settings` to edit folder rules with a table and folder picker.
 - Use `ln rescan` to rebuild the index from PowerToys Run.
 - Optionally expose indexed entries in global PowerToys Run results.

@@ -1,5 +1,6 @@
 using System.IO;
 using Community.PowerToys.Run.Plugin.Launchy.Models;
+using Wox.Infrastructure;
 
 namespace Community.PowerToys.Run.Plugin.Launchy.Services;
 
@@ -59,13 +60,13 @@ public sealed class IndexService
                 continue;
             }
 
-            var score = Score(entry, query);
-            if (score <= 0)
+            var match = Score(entry, query);
+            if (match.Score <= 0)
             {
                 continue;
             }
 
-            matches.Add(new SearchMatch { Entry = entry, Score = score });
+            matches.Add(new SearchMatch { Entry = entry, Score = match.Score, TitleHighlightData = match.TitleHighlightData });
         }
 
         return matches
@@ -165,49 +166,57 @@ public sealed class IndexService
         }
     }
 
-    private static int Score(IndexedEntry entry, string query)
+    private static SearchScore Score(IndexedEntry entry, string query)
     {
-        if (entry.Name.Equals(query, StringComparison.OrdinalIgnoreCase))
-        {
-            return 1000;
-        }
-
-        if (entry.Name.StartsWith(query, StringComparison.OrdinalIgnoreCase))
-        {
-            return 900;
-        }
-
-        if (entry.Name.Contains(query, StringComparison.OrdinalIgnoreCase))
-        {
-            return 700;
-        }
+        var nameMatch = FuzzySearch(query, entry.Name);
+        var bestScore = new SearchScore(nameMatch.Score, nameMatch.MatchData);
 
         if (entry.MatchDirectoryNames && DirectoryNameMatches(entry.FullPath, query))
         {
-            return 500;
+            var directoryScore = ScoreDirectoryNameMatch(entry.FullPath, query);
+            if (directoryScore > bestScore.Score)
+            {
+                bestScore = new SearchScore(directoryScore, TitleHighlightData: null);
+            }
         }
 
-        return 0;
+        return bestScore;
     }
 
     private static bool DirectoryNameMatches(string fullPath, string query)
     {
+        return ScoreDirectoryNameMatch(fullPath, query) > 0;
+    }
+
+    private static int ScoreDirectoryNameMatch(string fullPath, string query)
+    {
         var directoryPath = Path.GetDirectoryName(fullPath);
         if (string.IsNullOrWhiteSpace(directoryPath))
         {
-            return false;
+            return 0;
         }
 
+        var bestScore = 0;
         foreach (var directoryName in directoryPath.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar))
         {
-            if (directoryName.Contains(query, StringComparison.OrdinalIgnoreCase))
-            {
-                return true;
-            }
+            bestScore = Math.Max(bestScore, FuzzySearch(query, directoryName).Score / 2);
         }
 
-        return false;
+        return bestScore;
     }
+
+    private static MatchResult FuzzySearch(string query, string text)
+    {
+        if (StringMatcher.Instance is not null)
+        {
+            return StringMatcher.Instance.FuzzyMatch(query, text);
+        }
+
+        return new StringMatcher { UserSettingSearchPrecision = StringMatcher.SearchPrecisionScore.Regular }
+            .FuzzyMatch(query, text);
+    }
+
+    private sealed record SearchScore(int Score, IList<int>? TitleHighlightData);
 
     private static HashSet<string> ParseExtensions(string extensions)
     {
