@@ -7,6 +7,7 @@ using Community.PowerToys.Run.Plugin.Launchy.Services;
 using Community.PowerToys.Run.Plugin.Launchy.UI;
 using ManagedCommon;
 using Microsoft.PowerToys.Settings.UI.Library;
+using Wox.Infrastructure;
 using Wox.Plugin;
 
 namespace Community.PowerToys.Run.Plugin.Launchy;
@@ -17,7 +18,7 @@ public sealed class Main : IPlugin, IPluginI18n, IContextMenu, ISettingProvider,
     private const string RescanCommand = "rescan";
     private const string SettingsCommand = "settings";
     private const int ExactCommandScore = 1100;
-    private const int SuggestedCommandScore = 100;
+    private const int UnmatchedCommandScore = 1;
     private const string FolderRulesOptionKey = "folderRules";
     private const string DefaultExtensions = ".exe;.lnk";
     private const int DefaultMaxDepth = 10;
@@ -562,9 +563,29 @@ public sealed class Main : IPlugin, IPluginI18n, IContextMenu, ISettingProvider,
 
     private static int GetCommandScore(string search, string command)
     {
-        return search.Equals(command, StringComparison.OrdinalIgnoreCase)
-            ? ExactCommandScore
-            : SuggestedCommandScore;
+        if (string.IsNullOrWhiteSpace(search))
+        {
+            return UnmatchedCommandScore;
+        }
+
+        if (search.Equals(command, StringComparison.OrdinalIgnoreCase))
+        {
+            return ExactCommandScore;
+        }
+
+        var match = FuzzySearch(search, command);
+        return match.Score > 0 ? match.Score : UnmatchedCommandScore;
+    }
+
+    private static MatchResult FuzzySearch(string query, string text)
+    {
+        if (StringMatcher.Instance is not null)
+        {
+            return StringMatcher.Instance.FuzzyMatch(query, text);
+        }
+
+        return new StringMatcher { UserSettingSearchPrecision = StringMatcher.SearchPrecisionScore.Regular }
+            .FuzzyMatch(query, text);
     }
 
     private void OnThemeChanged(Theme oldTheme, Theme newTheme)
