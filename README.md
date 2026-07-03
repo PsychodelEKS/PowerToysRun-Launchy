@@ -2,7 +2,7 @@
 
 Launchy-style folder index plugin for PowerToys Run.
 
-Current version: `0.1.11`.
+Current version: `0.1.12`.
 
 ## Features
 

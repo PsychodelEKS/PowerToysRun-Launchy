@@ -216,7 +216,7 @@ public sealed class Main : IPlugin, IPluginI18n, IContextMenu, ISettingProvider,
             results.AddRange(_indexService.Search(
                     search,
                     includeBuiltInProgramDuplicates: isKeywordQuery)
-                .Select(match => CreateEntryResult(match, search)));
+                .Select(CreateEntryResult));
         }
 
         if (isKeywordQuery)
@@ -229,14 +229,14 @@ public sealed class Main : IPlugin, IPluginI18n, IContextMenu, ISettingProvider,
             .ToList();
     }
 
-    private Result CreateEntryResult(SearchMatch match, string query)
+    private Result CreateEntryResult(SearchMatch match)
     {
         var entry = match.Entry;
         return new Result
         {
             Title = entry.Name,
             SubTitle = entry.FullPath,
-            QueryTextDisplay = query,
+            QueryTextDisplay = entry.Name,
             IcoPath = GetEntryIconPath(entry),
             Score = match.Score,
             TitleHighlightData = match.TitleHighlightData,
@@ -268,7 +268,7 @@ public sealed class Main : IPlugin, IPluginI18n, IContextMenu, ISettingProvider,
         {
             Title = "Rescan Launchy index",
             SubTitle = subtitle,
-            QueryTextDisplay = query,
+            QueryTextDisplay = RescanCommand,
             IcoPath = _iconPath,
             Score = score,
             Action = context =>
@@ -285,7 +285,7 @@ public sealed class Main : IPlugin, IPluginI18n, IContextMenu, ISettingProvider,
         {
             Title = "Open Launchy settings",
             SubTitle = "Edit folder rules with a table and folder picker.",
-            QueryTextDisplay = query,
+            QueryTextDisplay = SettingsCommand,
             IcoPath = _iconPath,
             Score = score,
             Action = _ =>
